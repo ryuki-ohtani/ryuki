@@ -32,7 +32,7 @@
     ></a-entity>
     
     <!-- 360度画像の背景 -->
-    <a-sky id="sky" src="R0010034.JPG" rotation="0 0 0"></a-sky>
+    <a-sky id="sky" src="R0010203.JPG" rotation="0 -110 0"></a-sky>
     
     <!-- 音声エンティティ -->
     <a-entity id="bgm" sound="src: url(bgm01.mp3); autoplay: false; loop: true;"></a-entity>
@@ -40,6 +40,8 @@
     <a-entity id="sound2" sound="src: url(sound02.mp3); autoplay: false; loop: false;"></a-entity>
     <a-entity id="sound3" sound="src: url(sound03.mp3); autoplay: false; loop: true;"></a-entity>
     <a-entity id="sound4" sound="src: url(sound04.mp3); autoplay: false; loop: false;"></a-entity>
+    <a-entity id="sound5" sound="src: url(sound05.mp3); autoplay: false; loop: false;"></a-entity>
+    <a-entity id="sound6" sound="src: url(sound06.mp3); autoplay: false; loop: false;"></a-entity>
     
     <!-- カメラとカーソル -->
     <a-entity camera look-controls>
@@ -52,91 +54,58 @@
   </a-scene>
   
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      // 【追加】A-Frameシーンの準備完了を待ってからVRモードに切り替え
-      const sceneEl = document.querySelector('a-scene');
-      sceneEl.addEventListener('loaded', function () {
-        console.log('A-Frameシーンが読み込まれました。VRモードに切り替えます。');
-        // VRモードに自動切り替え
-        if (sceneEl.enterVR) {
-          sceneEl.enterVR();
-        }
-      });
+document.addEventListener('DOMContentLoaded', function () {
+  let hasStarted = false;
+  const modelEl = document.getElementById('myModel');
+  const bgmEl = document.getElementById('bgm');
+  const sound3El = document.getElementById('sound3');
+  const sound5El = document.getElementById('sound5');
+  const sound6El = document.getElementById('sound6');
 
-      const modelEl = document.getElementById('myModel');
-      const skyEl = document.getElementById('sky');
-      const bgmEl = document.getElementById('bgm');
-      const sound1El = document.getElementById('sound1');
-      const sound2El = document.getElementById('sound2');
-      const sound3El = document.getElementById('sound3');
-      const sound4El = document.getElementById('sound4');
-      
-      let hasStarted = false;
-      
-      // モデルを事前に読み込んでおく
-      modelEl.addEventListener('model-loaded', function () {
-        console.log('モデルが正常に読み込まれました（非表示状態）');
-      });
-      
-      // クリック/タップでスタート
-      document.addEventListener('click', startExperience);
-      sceneEl.addEventListener('triggerdown', startExperience);
+  function startExperience() {
+    if (hasStarted) return;
+    hasStarted = true;
 
-      
-      function startExperience() {
-        if (hasStarted) return; // 二重実行防止
-        hasStarted = true;
+    bgmEl.components.sound.playSound();
 
-        // クリックイベントリスナーを削除
-        document.removeEventListener('click', startExperience);
-        sceneEl.removeEventListener('triggerdown', startExperience);
+    // 2秒後にsound05再生＆モデル表示＆anime04（1回）※移動なし
+    setTimeout(function() {
+      sound5El.components.sound.playSound();
+      modelEl.setAttribute('visible', true);
+      modelEl.setAttribute('position', '0 -0.8 -6');
+      modelEl.setAttribute('animation-mixer', {clip: 'anime04', loop: 'false', repetitions: 1, clampWhenFinished: true});
 
-        console.log('ユーザーアクションを検出しました。BGMを開始します。');
-        bgmEl.components.sound.playSound();
+      // anime04(1回)終了後sound05停止→anime02（1回・再生速度0.3倍）＋sound06
+      setTimeout(function() {
+        sound5El.components.sound.stopSound();
+        modelEl.setAttribute('animation-mixer', {clip: 'anime02', loop: 'false', repetitions: 1, clampWhenFinished: true, timeScale: 0.3});
+        sound6El.components.sound.playSound();
 
-        // 10秒後にモデルを表示してanime04開始
+        // anime02(1回)終了後sound06停止→anime03（2回）＋位置変更＋sound03
         setTimeout(function() {
-          console.log('10秒経過しました。モデルを表示してanime04を開始します。');
-          modelEl.setAttribute('visible', true);
-          modelEl.setAttribute('animation-mixer', {clip: 'anime04', loop: 'false', clampWhenFinished: 'true'});
-          modelEl.setAttribute('position', '0 -1.5 -5');
-          sound4El.components.sound.playSound();
+          sound6El.components.sound.stopSound();
+          modelEl.setAttribute('position', '0 -0.8 -2');
+          modelEl.setAttribute('animation-mixer', {clip: 'anime03', loop: 'false', repetitions: 2, clampWhenFinished: true});
+          sound3El.components.sound.playSound();
 
-          // 8.0秒後にanime01へ
-          setTimeout(function () {
-            sound4El.components.sound.stopSound();
-            console.log('anime01に切り替え');
-            modelEl.setAttribute('animation-mixer', {clip: 'anime01', loop: 'false', clampWhenFinished: 'true'});
-            sound1El.components.sound.playSound();
-
-            // さらに7.0秒後にanime03へ
-            setTimeout(function () {
-              sound1El.components.sound.stopSound();
-              console.log('anime03に切り替え');
-              modelEl.setAttribute('animation-mixer', {clip: 'anime03', loop: 'false', clampWhenFinished: 'true'});
-              sound3El.components.sound.playSound();
-
-              // さらに5.6秒後にanime02へ
-              setTimeout(function () {
-                sound3El.components.sound.stopSound();
-                console.log('anime02に切り替え');
-                modelEl.setAttribute('animation-mixer', {clip: 'anime02', loop: 'false', clampWhenFinished: 'true'});
-                sound2El.components.sound.playSound();
-              }, 5600); // 5.6秒後 anime02
-
-            }, 7000); // 7.0秒後 anime03
-
-          }, 8000); // 8.0秒後 anime01
-
-          // モデル表示から30秒後にページ遷移
+          // anime03(2回)終了後ページ遷移
           setTimeout(function() {
-            console.log('30秒経過しました。ページ遷移を実行します。');
-            window.location.href = 'index.html';
-          }, 30000);
+            window.location.href = 'https://seiei.ac.jp/';
+          }, 2200 * 2); // anime03(2回)の長さに合わせて調整（2.2秒×2）
+        }, 500 / 0.3); // anime02(1回)の長さ0.5秒÷0.3（再生速度0.3倍なので約1.67秒）
+      }, 6933); // anime04(1回)の長さに合わせて調整（6.933秒）
+    }, 2000); // 2秒後
+  }
 
-        }, 10000); // 10秒後 anime04
-      }
-    });
+  // モデルを事前に読み込んでおく
+  modelEl.addEventListener('model-loaded', function () {
+    console.log('モデルが正常に読み込まれました（非表示状態）');
+  });
+  
+  // クリック/タップでスタート
+  document.addEventListener('click', startExperience);
+  sceneEl.addEventListener('triggerdown', startExperience);
+});
   </script>
 </body>
 </html>
